@@ -60,24 +60,18 @@ while (!movesToReach.every(move => move !== 0));
 console.log(movesToReach);
 
 
-// Flemme de calculer le PPCM, on brute force :D
-let startMovesToReach = [...movesToReach];
-while (!movesToReach.every(move => move === movesToReach[0])) {
-    let minMoveToReach = getMinMoveToReach();
-    let indexOfMinMoveToReach = movesToReach.indexOf(minMoveToReach);
+// PPCM :D
+answer = getLeastCommonMultipleOfValues(movesToReach);
+console.log(`Answer is '${answer}'`);
 
-    while (movesToReach[indexOfMinMoveToReach] === getMinMoveToReach() && !movesToReach.every(move => move === movesToReach[indexOfMinMoveToReach])) {
-        movesToReach[indexOfMinMoveToReach] += startMovesToReach[indexOfMinMoveToReach];
-    }    
+function getLeastCommonMultipleOfValues(values) {
+    return values.reduce(getLeastCommonMultiple)
 }
 
-console.log(`Answer is '${movesToReach[0]}'`);
+function getGreatestCommonDenominator(a, b) {
+    return a ? getGreatestCommonDenominator(b % a, a) : b;
+}
 
-function getMinMoveToReach() {
-    let minMoveToReach = Number.MAX_VALUE;
-    for (let i = 0; i < movesToReach.length; i++) {
-        minMoveToReach = Math.min(movesToReach[i], minMoveToReach);
-    }
-
-    return minMoveToReach;
+function getLeastCommonMultiple(a, b) {
+    return a * b / getGreatestCommonDenominator(a, b);
 }
