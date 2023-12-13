@@ -18,10 +18,14 @@ for (let y = 0; y < universe.length; y++) {
 }
 
 // Duplication des lignes vides
+let rowsAdded = 0;
 for (let y = 0; y < universe.length; y++) {
+    console.log(`${y}: ${universe[y].join('')}`);
     let isGalaxyInRow = universe[y].some(elem => elem === '#');
     if (!isGalaxyInRow) {
-        universe.splice(y, 0, universe[y]);
+        console.log('Pas de galaxie dans la ligne ' + (y - rowsAdded));
+        universe.splice(y, 0, universe[y].map(elem => 'o'));
+        rowsAdded++;
         y++;
     }
 }
@@ -33,26 +37,27 @@ for (let y = 0; y < universe.length; y++) {
 
 // Duplication des colonnes vides
 let cols = universe[0].map(() => []);
-let columnsAdded = 0;
 for (let x = 0; x < cols.length; x++) {
     for (let y = 0; y < universe.length; y++) {
         cols[x].push(universe[y][x]);;
     }
+}
 
+let colsAdded = 0;
+for (let x = 0; x < cols.length; x++) {
     let isGalaxyInCol = cols[x].some(elem => elem === '#');
     if (!isGalaxyInCol) {
         console.log('Pas de galaxie dans la colonne ' + x);
         for (let y = 0; y < universe.length; y++) {
             // Splice fonctionne pas, personne sait
-            console.log(y + ': ' + universe[y].join(''));
+            //console.log(`${universe[y].join('').substring(0, x + colsAdded)}X${universe[y].join('').substring(x + colsAdded)}`);
             universe[y] = [
-                universe[y].join('').substring(0, x),
-                '.',
-                universe[y].join('').substring(x)
+                universe[y].join('').substring(0, x + colsAdded),
+                'o',
+                universe[y].join('').substring(x + colsAdded)
             ];
-            console.log(y + ': ' + universe[y].join(''));
         }
-        x++;
+        colsAdded++;
     }
 }
 
@@ -77,10 +82,12 @@ galaxies.forEach((a, i) => {
     galaxies.forEach((b, j) => {
         if (i === j || pairs.some(pair => pair.x === j && pair.y === i)) return;
 
-        let distance = Math.abs((b.x - a.x) + (b.y - a.y));
+        let distanceX = Math.abs(b.x - a.x);
+        let distanceY = Math.abs(b.y - a.y);
+        let distance = distanceX + distanceY;
         answer += distance;
 
-        console.log(`${i + 1} ${JSON.stringify(a)} vers ${j + 1} ${JSON.stringify(b)} => ${distance}`);
+        //console.log(`${i + 1} ${JSON.stringify(a)} vers ${j + 1} ${JSON.stringify(b)} => ${distance}`);
         
         pairs.push({
             x: i,
@@ -89,6 +96,6 @@ galaxies.forEach((a, i) => {
     })
 })
 
-console.log(pairs.length);
+//console.log(pairs.length);
 
 console.log(`Answer is '${answer}'`);
