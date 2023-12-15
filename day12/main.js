@@ -6,49 +6,68 @@ let answer = 0;
 let lines = input.split('\r\n');
 
 // Parsing
-let fieldRows = []
-lines.forEach(line => {
+let fieldRows = lines.map(line => {
     let split = line.split(' ');
-    fieldRows.push({
+    return {
         row: split[0],
-        damagedGroups: split[1].split(',').map(char => parseInt(char))
-    });
-
+        groups: split[1].split(',').map(length => +length)
+    };
 })
+
+//console.log(fieldRows);
 
 // Traitement
 fieldRows.forEach(fieldRow => {
-    console.log(`Information de ${JSON.stringify(fieldRow)}`);
     
-    // Détermine les groupes naturels potentiellements cassés
-    let naturalGroups = fieldRow.row.split('.').filter(group => group !== '');
-    let knownDamagedGroups = naturalGroups.filter(group => group === '#'.repeat(group.length));
-    let unknownGroups = naturalGroups.filter(group => group.includes('?'));
-    let unknownMatchs = [...fieldRow.row.matchAll(/\?/g)];
+    // Récupère les matchs des ?
+    let unknowns = [...fieldRow.row.matchAll(/\?/g)];
 
-    console.log(naturalGroups);
-    console.log(knownDamagedGroups);
-    console.log(unknownGroups);
-    console.log(unknownMatchs);
+    // Récupère le nombre de springs endommagés manquants (n)
+    let knownDamagedSprings = [...fieldRow.row.matchAll(/#/g)];
+    let missingDamagedSprings = fieldRow.groups.reduce((acc, elem) => acc + elem) - knownDamagedSprings.length;
 
-    // Récupère le nombre de groupes restant à créer
-    let groupsToMake = fieldRow.damagedGroups.filter(group => !knownDamagedGroups.some(kGroup => kGroup.length === group))
-
-    // Calcule le nombre de groupes endommagés pouvant être créés à partir des groupes inconnus restants
-    let possibleGroups = 0;
-
-    // Pour chaque groupe à créer
-    for (let k = 0; k < groupsToMake.length; k++) {
-
+    // Crée une combinaison avec le nombre de spring endommagées manquantes
+    for (let i = 0; i < missingDamagedSprings; i++) {
+        unknowns[i][0] = '#';
     }
 
-    console.log(possibleGroups);
-    
+    // Récupère toutes les combinaisons possibles 
+    let possibleCombinations = getCombinations(unknowns);
+
+    // Remplace
+    possibleCombinations.forEach(combinations => {
+        let testString = getRemapedRow(combinations);
+        let damagedGroups = testString.split('.');
+
+        damagedGroups.map(group => group.length);
+        if (JSON.stringify(damagedGroups) === JSON.stringify(fieldRow.groups)) {
+            answer += 1;
+        }
+    })
 });
+
+
+console.log(`Answer is '${answer}'`);
+
+function getCombinations(array) {
+    console.log(array);
+    return new Array(1 << array.length).fill().map(
+      (e1, i) => array.filter((e2, j) => i & 1 << j));
+}
+
+function getRemapedRow(combination) {
+    //console.log(combination);
+    let result = combination[0].input;
+
+    combination.forEach(match => {
+        result = replaceAt(baseRow, match.index, match[0]);
+    })
+
+    result = result.replaceAll('?', '.');
+
+    return result;
+}
 
 function replaceAt(string, index, replacement) {
     return string.substring(0, index) + replacement + string.substring(index + replacement.length);
 }
-
-
-console.log(`Answer is '${answer}'`);
