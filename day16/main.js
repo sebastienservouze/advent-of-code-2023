@@ -13,7 +13,8 @@ energizedTiles.add(JSON.stringify([coords, direction]));
 const X = 0;
 const Y = 1
 
-progress(coords, direction);
+let iterations = 0;
+progress(coords, direction, iterations);
 let energizedTilesNoDup = removeDuplicateCoords(energizedTiles);
 
 answer = energizedTilesNoDup.size;
@@ -25,13 +26,19 @@ function progress(coords, currentDirection) {
 
     directions.forEach(direction => {
         let newCoords = [coords[X] + direction[X], coords[Y] + direction[Y]];
-        console.log(`[${map[coords[Y]][coords[X]]}] ${coords} > ${newCoords}`);
+        //console.log(`[${map[coords[Y]][coords[X]]}] ${coords} > ${newCoords}`);
 
         if (isInMap(newCoords) && !energizedTiles.has(JSON.stringify([newCoords, direction]))) {
             energizedTiles.add(JSON.stringify([newCoords, direction]));
-            progress(newCoords, direction);
+            progress(newCoords, direction, iterations);
         }
     })
+
+    if (iterations % 100 === 0) {
+        console.log(iterations);
+    }
+
+    iterations++;
 }
 
 function getDirectionsFromTile(tile, currentDirection) {

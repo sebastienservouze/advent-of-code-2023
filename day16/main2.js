@@ -17,7 +17,7 @@ for (let y = 0; y < map.length; y++) {
     let coords = [0, y];
     let direction = [ 1, 0 ];
     energizedTiles.add([coords, direction].join('#'));
-    progress(energizedTiles, coords, direction);
+    progress(energizedTiles, coords, direction, 0, 0, y);
     allEnergizedTilesKnown.push(new Set(energizedTiles));
     maxEnergizedTiles = Math.max(maxEnergizedTiles, removeDuplicateCoords(energizedTiles).size);
 
@@ -25,9 +25,11 @@ for (let y = 0; y < map.length; y++) {
     coords = [map.length - 1, y];
     direction = [ -1, 0 ];
     energizedTiles.add([coords, direction].join('#'));
-    progress(energizedTiles, coords, direction);
+    progress(energizedTiles, coords, direction, 0, 0, y);
     allEnergizedTilesKnown.push(new Set(energizedTiles));
     maxEnergizedTiles = Math.max(maxEnergizedTiles, removeDuplicateCoords(energizedTiles).size);
+
+    console.log(`0:${y} = ${maxEnergizedTiles}`);
 }
 
 // En partant du haut et du bas
@@ -36,7 +38,7 @@ for (let x = 0; x < map[0].length; x++) {
     let coords = [x, 0];
     let direction = [ 0, 1 ];
     energizedTiles.add([coords, direction].join('#'));
-    progress(energizedTiles, coords, direction);
+    progress(energizedTiles, coords, direction, 0, x, 0);
     allEnergizedTilesKnown.push(new Set(energizedTiles));
     let nbEnergizedTiles = removeDuplicateCoords(energizedTiles).size;
     maxEnergizedTiles = Math.max(maxEnergizedTiles, nbEnergizedTiles);
@@ -45,17 +47,19 @@ for (let x = 0; x < map[0].length; x++) {
     coords = [x, map.length - 1];
     direction = [ 0, -1 ];
     energizedTiles.add([coords, direction].join('#'));
-    progress(energizedTiles, coords, direction);
+    progress(energizedTiles, coords, direction, 0, x, 0);
     allEnergizedTilesKnown.push(new Set(energizedTiles));
     nbEnergizedTiles = removeDuplicateCoords(energizedTiles).size;
     maxEnergizedTiles = Math.max(maxEnergizedTiles, nbEnergizedTiles);
+
+    console.log(`${x}:0 = ${maxEnergizedTiles}`);
 }
 
 answer = maxEnergizedTiles;
 
 console.log(`Answer is '${answer}'`);
 
-function progress(energizedTiles, coords, currentDirection) {
+function progress(energizedTiles, coords, currentDirection, iterations, x, y) {
     let directions = getDirectionsFromTile(map[coords[Y]][coords[X]], currentDirection);
 
     directions.forEach(direction => {
@@ -63,26 +67,13 @@ function progress(energizedTiles, coords, currentDirection) {
        
         if (!isInMap(newCoords)) return;
 
-        for (let i = 0; i < allEnergizedTilesKnown.length; i++) {
-            if (allEnergizedTilesKnown[i].has([newCoords, direction].join('#'))) {
-                let copy = [...allEnergizedTilesKnown[i]];
-                console.log(copy);
-                let indexOfTile = copy.findIndex(elem => elem === [newCoords, direction].join('#'));
-                for (let j = indexOfTile; j < copy.length; j++) {
-                    energizedTiles.add(copy[j]);
-                }
-
-                console.log(`Known ! ${energizedTiles.size}`);
-
-                return;
-            }
+        let pair = [newCoords, direction].join('#')
+        if (!energizedTiles.has(pair)) {
+            energizedTiles.add(pair);
+            progress(energizedTiles, newCoords, direction, iterations, x, y);
         }
 
-        if (!energizedTiles.has([newCoords, direction].join('#'))) {
-            console.log([newCoords, direction].join('#'));
-            energizedTiles.add([newCoords, direction].join('#'));
-            progress(energizedTiles, newCoords, direction);
-        }
+        iterations++;
     })
 }
 
