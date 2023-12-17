@@ -9,35 +9,35 @@ const Y = 1
 const MAX_STRAIGHT = 3;
 const END_COORDS = [map[0].length - 1, map.length - 1].join(',');
 
-let visitedNodes = [];
-let unvisitedNodes = [];
-for (let y = 0; y < map.length; y++) {
-    for (let x = 0; x < map[y].length; x++) {
-        let node = {
-            prevNode: null,
-            coords: [x, y],
-            totalHeathLoss: Number.MAX_VALUE,
-        }
-        unvisitedNodes.push(node);
-    }
-}
-
-unvisitedNodes[0].totalHeathLoss = 0;
+let visitedNodes = new Set();
+let unvisitedNodes = [{
+    heatLoss: 0,
+    coords: [0,0],
+    dir: [0, 0],
+    lastDirs: [],
+}];
 
 let minHeatLoss = Number.MAX_VALUE;
 let bestEndNode = null;
 
-progress();
+let iterations = 0;
+dijkstrat();
 
-displayPath(bestEndNode);
+//displayPath(bestEndNode);
 
 answer = minHeatLoss;
 
-function progress() {
+function dijkstrat() {
     while (unvisitedNodes.length > 0) {
+        iterations++;
+
         let node = unvisitedNodes.shift();
-        visitedNodes.push(node);
-        console.log(`${node.coords} > ${node.totalHeathLoss} (${map[node.coords[Y]][node.coords[X]]})`);
+
+        if (iterations % 10000 == 0) {
+            console.log(`${node.coords} > ${node.heatLoss} (${node.dir} ${node.lastDirs}) - ${unvisitedNodes.length}/${visitedNodes.size}`);
+        }
+
+        visitedNodes.add(getIdentifierNode(node));
 
         if (node.coords.join(',') === END_COORDS) {
             minHeatLoss = Math.min(minHeatLoss, node.totalHeathLoss);
@@ -45,44 +45,27 @@ function progress() {
             continue;
         }
 
-        let possibleDirections = getPossibleDirectionsFromNode(map, node, getLastDirectionsFromNode(node, MAX_STRAIGHT));
+        let possibleDirections = getPossibleDirectionsFromNode(map, node);
         for (let i = 0; i < possibleDirections.length; i++) {
             let nextCoords = getCoordsPlusDirection(node.coords, possibleDirections[i])
-            let nextNode = unvisitedNodes.find(n => n.coords[X] === nextCoords[X] && n.coords[Y] === nextCoords[Y]);
-
-            if (node.coords.join(',') === '0,0') {
-                nextNode.prevNode = node;
-                nextNode.totalHeathLoss = +map[nextNode.coords[Y]][nextNode.coords[X]];
-            } else if (nextNode.totalHeathLoss > node.totalHeathLoss + +map[nextNode.coords[Y]][nextNode.coords[X]]) {
-                nextNode.prevNode = node;
-                nextNode.totalHeathLoss = node.totalHeathLoss + +map[nextNode.coords[Y]][nextNode.coords[X]];
+            let lastDirs = [...node.lastDirs];
+            lastDirs.push(possibleDirections[i]);
+            let nextNode = {
+                heatLoss: node.heatLoss + +map[nextCoords[X]][nextCoords[Y]],
+                coords: nextCoords,
+                dir: possibleDirections[i],
+                lastDirs: lastDirs.slice(0, MAX_STRAIGHT),
             }
-            //console.log(`Next ${nextNode.coords} > ${nextNode.totalHeathLoss}`);
+
+            unvisitedNodes.push(nextNode);
         }
 
-        if (possibleDirections.length === 0) {
-            console.log(`${node.coords} Fin du chemin`);
-            //return;
-        }
-
-        unvisitedNodes.sort((a, b) => a.totalHeathLoss - b.totalHeathLoss);
+        unvisitedNodes.sort((a, b) => a.heatLoss - b.heatLoss);
         //unvisitedNodes.filter(n => n.totalHeathLoss < Number.MAX_VALUE).forEach(n => console.log(`${n.coords} - ${n.totalHeathLoss}`));
     }
 }
 
-function getLastDirectionsFromNode(node, nbDirections) {
-    let lastDirections = [];
-    let currentNode = node;
-    while (lastDirections.length < nbDirections && currentNode.prevNode !== null) {
-        lastDirections.push(getDirectionFromANodeToB(currentNode.prevNode, currentNode));
-        currentNode = currentNode.prevNode;
-    }
-
-    return lastDirections;
-}
-
-function getPossibleDirectionsFromNode(map, node, lastDirections) {
-    let lastDirection = lastDirections[lastDirections.length - 1];
+function getPossibleDirectionsFromNode(map, node) {
     let possibleDirections = [
         '1,0',
         '-1,0',
@@ -91,30 +74,33 @@ function getPossibleDirectionsFromNode(map, node, lastDirections) {
     ];
 
     // Si les dernières directions sont toutes les mêmes, on ne peut pas aller dans cette direction
-    if (lastDirection && lastDirections.length === MAX_STRAIGHT && lastDirections.every(dir => dir[X] === lastDirection[X] && dir[Y] === lastDirection[Y])) {
-        let indexOfLastDirectionInPossibleDirections = possibleDirections.indexOf(lastDirection.join(','));
+    if (node.lastDirs.length === MAX_STRAIGHT && node.lastDirs.every(dir => dir[X] === node.dir[X] && dir[Y] === node.dir[Y])) {
+        let indexOfLastDirectionInPossibleDirections = possibleDirections.indexOf(node.dir.join(','));
         possibleDirections.splice(indexOfLastDirectionInPossibleDirections, 1);
     }
 
-    if (lastDirection) {
-        let oppositeDirection = [-lastDirection[X], -lastDirection[Y]];
-        let indexOfOppositeDirectionInPossibleDirections = possibleDirections.indexOf(oppositeDirection.join(','));
-        possibleDirections.splice(indexOfOppositeDirectionInPossibleDirections, 1);
-    }
+    let oppositeDirection = [-node.dir[X], -node.dir[Y]];
+    let indexOfOppositeDirectionInPossibleDirections = possibleDirections.indexOf(oppositeDirection.join(','));
+    possibleDirections.splice(indexOfOppositeDirectionInPossibleDirections, 1);
 
-    // Ne garde que les directions qui sont dans la map
+    // Ne garde que les directions qui sont dans la map et par lesquelles on est pas déjà passé
     possibleDirections = possibleDirections.filter(dir => {
         let newCoords = getCoordsPlusDirection(node.coords, dir.split(',').map(v => +v))
-        return isInMap(map, newCoords) && !hasAlreadyGoneThroughCoords(newCoords);
+        let lastDirs = [...node.lastDirs];
+        lastDirs.push(dir.split(','));
+        return isInMap(map, newCoords) && !hasAlreadyGoneThrough(newCoords, dir, lastDirs);
     });
 
     possibleDirections = possibleDirections.map(dir => dir.split(',').map(coord => +coord));
 
+    //console.log(`${node.coords} - ${node.dir} - ${node.lastDirs} - ${possibleDirections}`)
+
     return possibleDirections;
 }
 
-function hasAlreadyGoneThroughCoords(coord) {
-    if (visitedNodes.some(n => n.coords.join(',') === coord.join(','))) {
+function hasAlreadyGoneThrough(coord, dir, lastDirs) {
+    // if (visitedNodes.some(n => n.coords.join(',') === coord.join(',') && (n.dir.join(',') === dir) && n.lastDirs.join(',') === lastDirs.join(','))) {
+    if (visitedNodes.has(getIdentifier(coord, dir, lastDirs))) {
         //console.log(`${coord} - déjà passé par là`);
         return true;
     }
@@ -126,17 +112,23 @@ function isInMap(map, coords) {
     return coords[X] >= 0 && coords[X] < map[0].length && coords[Y] >= 0 && coords[Y] < map.length;
 }
 
-function getDirectionFromANodeToB(a, b) {
-    return [b.coords[X] - a.coords[X], b.coords[Y] - a.coords[Y]];
-}
-
 function getCoordsPlusDirection(coords, direction) {
     return [coords[X] + direction[X], coords[Y] + direction[Y]];
 }
 
+function getIdentifier(coord, dir, lastDirs) {
+    //console.log(`${coord}|${dir}|${lastDirs}`);
+    return `${coord}|${lastDirs}`;
+}
+
+function getIdentifierNode(node) {
+    //console.log(`${node.coords}|${node.dir}|${node.lastDirs}`);
+    return `${node.coords}|${node.lastDirs}`;
+}
+
 function displayPath(node) {
     while (node.prevNode !== null) {
-        console.log(`${node.coords} - ${node.totalHeathLoss} (${map[node.coords[Y]][node.coords[X]]}) (${getDirectionFromANodeToB(node.prevNode, node)})`);
+        console.log(`${node.coords} - ${node.totalHeathLoss} (${map[node.coords[Y]][node.coords[X]]})`);
         node = node.prevNode;
     }
 }
