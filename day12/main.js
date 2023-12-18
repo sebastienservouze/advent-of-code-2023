@@ -1,4 +1,6 @@
+import { resourceLimits } from "worker_threads";
 import { readInput } from "../inputReader.js";
+import { measure, replaceAt } from "../utils.js";
 
 let input = readInput(12);
 let answer = 0;
@@ -18,82 +20,55 @@ let fieldRows = lines.map(line => {
 
 // Traitement
 fieldRows.forEach((fieldRow, i) => {
-    if (i > 0) return;
-
-    // Récupère les matchs des ?
-    let unknowns = [...fieldRow.row.matchAll(/\?/g)];
-
-    // Récupère le nombre de springs endommagés manquants (n)
-    let knownDamagedSprings = [...fieldRow.row.matchAll(/#/g)];
-    let missingDamagedSprings = fieldRow.groups.reduce((acc, elem) => acc + elem) - knownDamagedSprings.length;
-
-    // Crée une combinaison avec le nombre de spring endommagées manquantes
-    for (let j = 0; j < missingDamagedSprings; j++) {
-        unknowns[j][0] = '#';
-    }
-
-    // Récupère toutes les combinaisons possibles 
-    let possibleCombinations = getCombinations(unknowns);
-
-    console.log(possibleCombinations);
-
-    // Remplace
-    /*possibleCombinations.forEach(combination => {
-        let testString = getRemapedRow(combination, fieldRow.row);
-        console.log(combination);
-        console.log(fieldRow.row + ' > ' + testString);
-        let damagedGroups = testString.split('.');
-
-        damagedGroups.map(group => group.length);
-        if (JSON.stringify(damagedGroups) === JSON.stringify(fieldRow.groups)) {
-            answer += 1;
-        }
-    })*/
+    console.log('Recherche pour la row ' + JSON.stringify(fieldRow));
+    let lineResult = getPossibleSolutions(fieldRow.row, fieldRow.groups);
+    console.log(lineResult);
+    answer += lineResult;
 });
 
-
-console.log(`Answer is '${answer}'`);
-
-function getCombinations(array) {
-    console.log('Combinations');
-    let combinations = [];
-
-    for (let i = 0; i < array.length; i++) {
-        for (let j = 0; j < array.length; j++) {
-            if (i === j || array[i][0] === array[j][0]) continue;
-
-            let combination = [...array];
-            permute(combination, i, j);
-            console.log(combination);
-            combinations.push(combination);
+function getPossibleSolutions(row, groups) {
+    console.log(row + ' - ' + groups)
+    if (row.length === 0) {
+        if (groups.length === 0) {
+            console.log(`${row} - ${groups} + 1`);
+            return 1;
+        } else {
+            return 0;
         }
     }
 
-    console.log('Fin')
-    console.log(combinations);
+    if (groups.length === 0) {
+        if (!row.includes('#')) {
+            console.log(`${row} - ${groups} + 1`);
+            return 1;
+        }
+        else {
+            return 0;
+        }
 
-    return combinations;
-}
+    }
 
-function permute(array, ia, ib) {
-    let temp = array[ia].index;
-    array[ia].index = array[ib].index;
-    array[ib].index = temp;
-}
+    let result = 0;
+    let firstChar = row.charAt(0);
 
-function getRemapedRow(combination, baseRow) {
-    let result = baseRow;
+    // Continue d'itérer
+    if (".?".includes(firstChar)) {
+        result += getPossibleSolutions(row.substring(1), groups.slice());
+    }
 
-    combination.forEach(match => {
-        //console.log(result);
-        result = replaceAt(result, match.index, match[0]);
-        //console.log(result);
-    })
-    //console.log(result);
+    // Potentiel bloc valide
+    if ("#?".includes(firstChar)) {
+        // Valide si toutes ces conditions respectée
+        let isEnoughSpringsLeft = row.length >= groups[0];
+        let isAllBroken = !row.substring(0, groups[0]).includes('.');
+        let isNextCharOperational = groups[0] === row.length || row.charAt(groups[0] !== '#');
+        if (isEnoughSpringsLeft && isAllBroken && isNextCharOperational) {
+            result += getPossibleSolutions(row.substring(groups[0] + 1), groups.slice(1));
+        } 
+    }
 
     return result;
 }
 
-function replaceAt(string, index, replacement) {
-    return string.substring(0, index) + replacement + string.substring(index + replacement.length);
-}
+
+console.log(`Answer is '${answer}'`);
