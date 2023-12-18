@@ -24,6 +24,7 @@ unvisitedNodes.init([{
     coords: [0, 0],
     dir: [0, 0],
     consecutives: 0,
+    prevNode: null
 }]);
 
 
@@ -32,6 +33,7 @@ let bestEndNode = null;
 
 let iterations = 0;
 measure('Durée du traitement: ', dijkstrat);
+displayPath(bestEndNode)
 answer = minHeatLoss;
 
 function dijkstrat() {
@@ -44,7 +46,7 @@ function dijkstrat() {
             console.log(`${node.coords} > ${node.heatLoss} (${node.dir} ${node.consecutives}) - ${unvisitedNodes.length}/${visitedNodes.size}`);
         }
 
-        if (equal2D(node.coords, END_COORDS)) {
+        if (equal2D(node.coords, END_COORDS) && node.consecutives >= MIN_STRAIGHT) {
             minHeatLoss = Math.min(minHeatLoss, node.heatLoss);
             bestEndNode = node;
             return;
@@ -71,17 +73,27 @@ function dijkstrat() {
                 continue;
             }
 
-            // Tout droit alors qu'on peut pas ?
+            // Gestion des mouvements
             let consecutives = 0;
+
+             // Même direction que le dernier ?
             if (equal2D(DIRECTIONS[i], node.dir)) {
-                // Même direction que le dernier, si on est a moins de 4 blocs dans cette direction, on doit aller tout droit
+                // Si on est a MAX_STRAIGHT blocs dans cette direction, on sort
                 if (node.consecutives === MAX_STRAIGHT) {
                     continue;
                 }
-                else {
-                    consecutives = node.consecutives + 1;
+
+                // Sinon on continue dans cette direction
+                consecutives = node.consecutives + 1;
+            } 
+            // Pas la même direction ?
+            else {
+                // Si on est à moins de MIN_STRAIGHT blocs dans la précédente node, on sort
+                if (node.consecutives < MIN_STRAIGHT && node.prevNode) {
+                    continue;
                 }
-            } else {
+                
+                // Sinon on tourne
                 consecutives = 1;
             }
 
@@ -90,6 +102,7 @@ function dijkstrat() {
                 coords: nextCoords,
                 dir: DIRECTIONS[i],
                 consecutives: consecutives,
+                prevNode: node,
             }
 
             unvisitedNodes.push(nextNode);
