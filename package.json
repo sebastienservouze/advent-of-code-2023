@@ -1,6 +1,7 @@
 {
     "type": "module",
     "dependencies": {
+        "heap-js": "^2.3.0",
         "node-fetch": "^3.3.2"
     }
 }
