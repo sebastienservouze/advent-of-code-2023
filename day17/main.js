@@ -39,6 +39,10 @@ function dijkstrat() {
         let node = unvisitedNodes.peek();
         unvisitedNodes.remove(node);
 
+        if (iterations % 10000 === 0) {
+            console.log(`${node.coords} > ${node.heatLoss} (${node.dir} ${node.consecutives}) - ${unvisitedNodes.length}/${visitedNodes.size}`);
+        }
+
         if (equal2D(node.coords, END_COORDS)) {
             minHeatLoss = Math.min(minHeatLoss, node.heatLoss);
             bestEndNode = node;
@@ -52,11 +56,6 @@ function dijkstrat() {
 
         visitedNodes.add(getIdentifierNode(node));
 
-        if (iterations % 10000 === 0) {
-            console.log(`${node.coords} > ${node.heatLoss} (${node.dir} ${node.consecutives}) - ${unvisitedNodes.length}/${visitedNodes.size}`);
-        }
-
-        //console.log(possibleDirections);
         for (let i = 0; i < DIRECTIONS.length; i++) {
             let nextCoords = getCoordsPlusDirection(node.coords, DIRECTIONS[i])
 

@@ -7,7 +7,8 @@ let map = input.split('\r\n');
 
 const X = 0;
 const Y = 1
-const MAX_STRAIGHT = 3;
+const MIN_STRAIGHT = 4;
+const MAX_STRAIGHT = 10;
 const END_COORDS = [map[0].length - 1, map.length - 1];
 const DIRECTIONS = [
     [1, 0],
@@ -31,7 +32,6 @@ let bestEndNode = null;
 
 let iterations = 0;
 measure('Durée du traitement: ', dijkstrat);
-//ddisplayPath(bestEndNode);
 answer = minHeatLoss;
 
 function dijkstrat() {
@@ -39,6 +39,10 @@ function dijkstrat() {
         iterations++;
         let node = unvisitedNodes.peek();
         unvisitedNodes.remove(node);
+
+        if (iterations % 10000 === 0) {
+            console.log(`${node.coords} > ${node.heatLoss} (${node.dir} ${node.consecutives}) - ${unvisitedNodes.length}/${visitedNodes.size}`);
+        }
 
         if (equal2D(node.coords, END_COORDS)) {
             minHeatLoss = Math.min(minHeatLoss, node.heatLoss);
@@ -53,12 +57,6 @@ function dijkstrat() {
 
         visitedNodes.add(getIdentifierNode(node));
 
-        if (iterations % 10000 === 0) {
-            console.log(`${node.coords} > ${node.heatLoss} (${node.dir} ${node.consecutives}) - ${unvisitedNodes.length}/${visitedNodes.size}`);
-        }
-
-
-        //console.log(possibleDirections);
         for (let i = 0; i < DIRECTIONS.length; i++) {
             let nextCoords = getCoordsPlusDirection(node.coords, DIRECTIONS[i])
 
@@ -76,6 +74,7 @@ function dijkstrat() {
             // Tout droit alors qu'on peut pas ?
             let consecutives = 0;
             if (equal2D(DIRECTIONS[i], node.dir)) {
+                // Même direction que le dernier, si on est a moins de 4 blocs dans cette direction, on doit aller tout droit
                 if (node.consecutives === MAX_STRAIGHT) {
                     continue;
                 }
