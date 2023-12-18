@@ -31,7 +31,6 @@ let bestEndNode = null;
 
 let iterations = 0;
 measure('Durée du traitement: ', dijkstrat);
-//ddisplayPath(bestEndNode);
 answer = minHeatLoss;
 
 function dijkstrat() {
@@ -56,7 +55,6 @@ function dijkstrat() {
         if (iterations % 10000 === 0) {
             console.log(`${node.coords} > ${node.heatLoss} (${node.dir} ${node.consecutives}) - ${unvisitedNodes.length}/${visitedNodes.size}`);
         }
-
 
         //console.log(possibleDirections);
         for (let i = 0; i < DIRECTIONS.length; i++) {
