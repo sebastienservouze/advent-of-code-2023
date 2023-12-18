@@ -1,6 +1,4 @@
-import { resourceLimits } from "worker_threads";
 import { readInput } from "../inputReader.js";
-import { measure, replaceAt } from "../utils.js";
 
 let input = readInput(12);
 let answer = 0;
@@ -19,55 +17,52 @@ let fieldRows = lines.map(line => {
 //console.log(fieldRows);
 
 // Traitement
-fieldRows.forEach((fieldRow, i) => {
-    console.log('Recherche pour la row ' + JSON.stringify(fieldRow));
-    let lineResult = getPossibleSolutions(fieldRow.row, fieldRow.groups);
-    console.log(lineResult);
-    answer += lineResult;
+fieldRows.forEach(fieldRow => {
+    answer += getPossibleSolutions(fieldRow.row, fieldRow.groups);
 });
 
 function getPossibleSolutions(row, groups) {
-    console.log(row + ' - ' + groups)
+    
+    // Si chaine vide (fin de la récursion)
     if (row.length === 0) {
-        if (groups.length === 0) {
-            console.log(`${row} - ${groups} + 1`);
-            return 1;
-        } else {
-            return 0;
-        }
+        // Plus de groupes ? C'est un match !
+        return groups.length === 0 ? 1 : 0;
     }
 
+    // Si plus de groupes
     if (groups.length === 0) {
-        if (!row.includes('#')) {
-            console.log(`${row} - ${groups} + 1`);
-            return 1;
-        }
-        else {
-            return 0;
-        }
-
+        // Plus de cassées on a tous les matchs !
+        return !row.includes('#') ? 1 : 0;
     }
 
-    let result = 0;
-    let firstChar = row.charAt(0);
+    let firstChar = row[0];
+    let restOfRow = row.substring(1);
 
-    // Continue d'itérer
-    if (".?".includes(firstChar)) {
-        result += getPossibleSolutions(row.substring(1), groups.slice());
+    // Si c'est un spring OK
+    if (firstChar === ".") {
+        return getPossibleSolutions(restOfRow, groups);
     }
 
-    // Potentiel bloc valide
-    if ("#?".includes(firstChar)) {
-        // Valide si toutes ces conditions respectée
-        let isEnoughSpringsLeft = row.length >= groups[0];
-        let isAllBroken = !row.substring(0, groups[0]).includes('.');
-        let isNextCharOperational = groups[0] === row.length || row.charAt(groups[0] !== '#');
+    // Si c'est un spring KO
+    if (firstChar === "#") {
+        let group = groups[0];
+
+        // On est au début d'un groupe, pour être ok, il doit être assez grand, complètement cassé et soit à la fin de la string, soit il ne se termine pas par un spring KO
+        let isEnoughSpringsLeft = group <= row.length;
+        let isAllBroken = !row.substring(0, group).includes('.');
+        let isNextCharOperational = group === row.length || row.charAt(group) !== '#';
+
         if (isEnoughSpringsLeft && isAllBroken && isNextCharOperational) {
-            result += getPossibleSolutions(row.substring(groups[0] + 1), groups.slice(1));
-        } 
+            return getPossibleSolutions(row.substring(group + 1), groups.slice(1));
+        }
+
+        return 0;
     }
 
-    return result;
+    // Si c'est un inconnu
+    if (firstChar === "?") {
+        return getPossibleSolutions('#' + restOfRow, groups) + getPossibleSolutions('.' + restOfRow, groups);
+    }
 }
 
 
