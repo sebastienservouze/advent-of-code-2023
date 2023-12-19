@@ -168,6 +168,9 @@ function visualize(path, triangles) {
     ctx.strokeStyle = '#FFF';
     ctx.fillStyle = '#FFF';
     ctx.font = '24px consolas'
+
+    ctx.fillStyle = '#333';
+    ctx.fillRect(0, 0, cv.width, cv.height);
     
     // Path
     ctx.beginPath();
