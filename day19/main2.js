@@ -39,15 +39,9 @@ lines.forEach(line => {
         workflows[name] = flows;
         return;
     } 
-
-    // Parts
-    let partDecomposed = line.match(/\{([^\}]+)\}/)[1].split(',');
-    let part = [];
-    partDecomposed.forEach(category => part[category[0]] = +category.substring(2));
-    parts.push(part);
 })
 
-// Récupère tous les workflow qui envoient vers A
+// Récupère toutes les condition et workflow qui vont vers 'A'
 let pairWorkflowConditionToA = Object.keys(workflows).filter(name => workflows[name].some(condition => condition.next === 'A'))
     .map(name => {
         return {
@@ -56,13 +50,13 @@ let pairWorkflowConditionToA = Object.keys(workflows).filter(name => workflows[n
         };
     });
 
-console.log(pairWorkflowConditionToA);
-// Pour chaque workflow, traverse récursivement jusqu'à trouvé 'in'
+// Pour chaque workflow, traverse récursivement jusqu'à trouver 'in'
 let validRanges = [];
 let prevWorkflowName = 'A';
 let dontDoAgain = [];
 pairWorkflowConditionToA.forEach(pair => {
     pair.conditions.forEach(condition => {
+        // Evite les pairs doublée où toutes les conditions mènent vers 'A'
         if (dontDoAgain.some(workflowName => workflowName === pair.name)) return;
 
         let ranges = [];
@@ -95,8 +89,7 @@ function getRangesToPrevWorkflows(workflow, workflowName, prevWorkflowName, rang
         // Récupère les ranges qui permettent d'accéder à ce workflow
         for (let condition of workflow){
             if (getRangesToGoToSpecificWorkflowFromCondition(condition, prevWorkflowName, ranges, searchedCondition)) {
-                //console.log('On a trouvé', ranges);
-                break;
+                break; // Sort dès que la condition est trouvée pour éviter d'ajouter les suivantes aux ranges
             }
         }
     }
@@ -105,8 +98,6 @@ function getRangesToPrevWorkflows(workflow, workflowName, prevWorkflowName, rang
     let prevWorkflowNames = Object.keys(workflows).filter(name => workflows[name]
         .some(condition => condition.next === workflowName));
         
-    //console.log('Workflow allant jusqu\'a', workflowName, ':', prevWorkflowNames)
-
     // Recommence pour chacun des workflows qui mène à celui-ci
     prevWorkflowNames.forEach(name => {
         ranges = getRangesToPrevWorkflows(workflows[name], name, workflowName, ranges);
@@ -122,12 +113,8 @@ function getRangesToGoToSpecificWorkflowFromCondition(condition, workflowName, r
 
     // On peut potentiellement simplifier mais j'ai peur
 
-    // Si c'est le workflow qu'on cherche, on doit être dans le range
-    if (condition.next === workflowName && (!searchedCondition || JSON.stringify(searchedCondition) === JSON.stringify(condition))) {
-        if (searchedCondition) {
-            console.log('Hello',workflowName,searchedCondition);
-        }
-        
+    // Si c'est le workflow qu'on cherche (et la bonne condition), on doit être dans le range
+    if (condition.next === workflowName && (!searchedCondition || JSON.stringify(searchedCondition) === JSON.stringify(condition))) {        
         // Si opérateur plus grand que, le range minimum pour la categorie devient le max entre le range actuel min et condition.value + 1
         if (condition.operator === '>') {
             ranges[condition.category][0] = Math.max(ranges[condition.category][0], condition.value + 1);
