@@ -125,8 +125,8 @@ while (importantMap.size < 4) {
     }
 }
 
-// PPCM :D
-answer = getLeastCommonMultipleOfValues([importantMap.get('tg') - 1, importantMap.get('lz') - 1, importantMap.get('kh') - 1, importantMap.get('hn') - 1]);
+// PPCM :D > A noter, j'ai du utiliser le calculateur de dcode.fr parce que le mien doit faire des approximation avec la division, lourd
+answer = getLeastCommonMultipleOfValues([importantMap.get('tg'), importantMap.get('lz'), importantMap.get('kh'), importantMap.get('hn')]);
 
 console.log(`Answer is ${answer}`);
 
