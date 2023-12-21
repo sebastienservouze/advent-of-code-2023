@@ -1,5 +1,5 @@
 import { readInput } from "../inputReader.js";
-import { hashCode, measure } from "../utils.js";
+import { hashCode, measure, replaceAt } from "../utils.js";
 
 let input = readInput(21);
 let answer = 0;
@@ -19,12 +19,14 @@ const DIRECTIONS = [
 
 let availaibleCells = new Map();
 availaibleCells.set(hashCode(START_X + ',' + START_Y), [START_X, START_Y]);
-const MAX_STEPS = 16;
+const MAX_STEPS = 6;
 let step = 0;
 measure('Chemins parcourus en', () => {
     while (step < MAX_STEPS) {
         step++;
         availaibleCells = getAvailaibleCells(availaibleCells);
+        console.log(availaibleCells.size);
+        visualize(availaibleCells);
     }
 })
 
@@ -53,4 +55,13 @@ function getCoordsPlusDirection(coords, direction) {
 
 function isInMap(coords) {
     return coords[X] >= 0 && coords[X] < map[0].length && coords[Y] >= 0 && coords[Y] < map.length;
+}
+
+function visualize(availaibleCells) {
+    let mapCopy = map.map(row => row);
+    availaibleCells.forEach((cell, key) => {
+        mapCopy[cell[Y]] = replaceAt(mapCopy[cell[Y]], cell[X], 'O');
+    });
+
+    console.log(mapCopy.join('\n'));
 }
