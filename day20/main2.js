@@ -30,33 +30,37 @@ lines.forEach(line => {
     modules.push(module);
 });
 
-// Affecte les inputs aux module CONJ
-modules.filter(module => module.type !== 'CONJ').forEach(module => {
-    let conjOutputs = module.outputs.filter(outputName => modules.find(mod => mod.name === outputName).type === 'CONJ')
-        .map(outputName => modules.find(mod => mod.name === outputName));
-
-    conjOutputs.forEach(mod => mod.inputs[module.name] = false);
-})
-
 modules.forEach(module => {
     for (let i = 0; i < module.outputs.length; i++) {
-        module.outputs[i] = modules.find(mod => mod.name === module.outputs[i]);
+        module.outputs[i] = modules.find(mod => mod.name === module.outputs[i]) || 'rx';
     }
 })
 
+// Affecte les inputs aux module CONJ
+modules.forEach(module => {
+    // Récupère tous les outputs qui sont des CONJ
+    let conjOutputs = module.outputs.filter(output => output.type === 'CONJ');
+    conjOutputs.forEach(mod => mod.inputs[module.name] = false);
+})
+
+// Trouve les modules qui mènent à rx 
+let moduleToRx = modules.find(mod => mod.outputs.some(output => output === 'rx'));
+
+// Trouve tous les modules qui mènent à celui ci (on sait que ce sont des conj)
+let importantModules = moduleToRx.inputs;
 
 let queue = [];
 let pulseCounts = [0, 0];
 let cycles = 0;
-let importantMap = new Map();
+let importantMap = new Map(); // Trouve le cycle pour chaque input important
 
 while (importantMap.size < 4) {
     queue.push([null, modules.find(module => module.name === 'broadcaster'), false])
+    cycles++;
 
     while (queue.length) {
         let data = queue.shift();
-        cycles++;
-
+        
         let prev = data[0];
         let module = data[1];
         let pulse = data[2];
@@ -64,36 +68,14 @@ while (importantMap.size < 4) {
         if (pulse) pulseCounts[1]++;
         if (!pulse) pulseCounts[0]++;
 
-        //console.log(prev ? prev.name : 'broadcaster', pulse, '->', module ? module.name : ' fin'); 
-
-        if (!module) {
+        //console.log(prev ? prev.name : 'broadcaster', pulse, '->', module === 'rx' ? 'rx' : module.name); 
+        
+        if (module === 'rx') {
             if (!pulse) {
                 rxLowPulse = true;
                 break;
             }
             continue;
-        }
-
-        // Trouve les quatres conjonctions directement avant cs > rx
-        // Il faudrait les trouver par le code en partant depuis les inputs de rx puis de cs, mais un peu la flemme
-        // Le but c'est de comprendre qu'il faut qu'ils s'alignent, donc on cherche la taille de leur cycles respectifs
-        if (module.inputs) {
-            if (module.name === 'tg' && !importantMap.has('tg') && !Object.keys(module.inputs).every(key => module.inputs[key])) {
-                console.log('tg', cycles);
-                importantMap.set('tg', cycles);
-            }
-            if (module.name === 'lz' && !importantMap.has('lz') && !Object.keys(module.inputs).every(key => module.inputs[key])) {
-                console.log('lz', cycles);
-                importantMap.set('lz', cycles);
-            }
-            if (module.name === 'kh' && !importantMap.has('kh') && !Object.keys(module.inputs).every(key => module.inputs[key])) {
-                console.log('kh', cycles);
-                importantMap.set('kh', cycles);
-            }
-            if (module.name  === 'hn' && !importantMap.has('hn') && !Object.keys(module.inputs).every(key => module.inputs[key])) {
-                console.log('hn', cycles);
-                importantMap.set('hn', cycles);
-            }
         }
 
         // Passe plat
@@ -119,14 +101,24 @@ while (importantMap.size < 4) {
             // Tous les inputs positifs ?
             let allPositives = Object.keys(module.inputs).every(key => module.inputs[key]);
 
+            // Trouve les cycles
+            if (module.name === moduleToRx.name) {
+                Object.keys(module.inputs).forEach(input => {
+                    //console.log(input, module.inputs[input]);
+                    if (module.inputs[input] && !importantMap.has(input)) {
+                        importantMap.set(input, cycles);
+                    }
+                });
+            }
+
             // Si oui, on envoi false, sinon true
             module.outputs.forEach(output => queue.push([module, output, !allPositives]));
         }
     }
 }
 
-// PPCM :D > A noter, j'ai du utiliser le calculateur de dcode.fr parce que le mien doit faire des approximation avec la division, lourd
-answer = getLeastCommonMultipleOfValues([importantMap.get('tg'), importantMap.get('lz'), importantMap.get('kh'), importantMap.get('hn')]);
+// PPCM :D
+answer = getLeastCommonMultipleOfValues([...importantMap.values()]);
 
 console.log(`Answer is ${answer}`);
 
