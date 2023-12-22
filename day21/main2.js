@@ -55,6 +55,7 @@ let nbRepetitions = Math.ceil(TOTAL_STEPS / W);
 answer = a * Math.pow(nbRepetitions, 2) + b * nbRepetitions + c;
 
 console.log(terms);
+console.log(nbRepetitions);
 console.log(`Answer is '${answer}'`);
 
 
